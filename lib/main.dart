@@ -2,8 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:liquid_swipe/liquid_swipe.dart';
 import 'package:slurp/pages/information.page.dart';
 import 'package:slurp/pages/landing.page.dart';
+import 'package:slurp/services/database.service.dart';
 
-void main() {
+PageStorageKey mykey = const PageStorageKey("testkey");
+final PageStorageBucket _bucket = PageStorageBucket();
+
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  await DatabaseService.instance.init();
   runApp(const MyApp());
 }
 
@@ -52,7 +58,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   int currentpage = 0;
-  LiquidController liquidController = LiquidController();
+  final landingPageKey = UniqueKey();
 
   @override
   Widget build(BuildContext context) {
@@ -62,20 +68,6 @@ class _MyHomePageState extends State<MyHomePage> {
     // The Flutter framework has been optimized to make rerunning build methods
     // fast, so that you can just rebuild anything that needs updating rather
     // than having to individually change instances of widgets.
-    return LiquidSwipe(
-        liquidController: liquidController,
-        onPageChangeCallback: (activePageIndex) {
-          setState(() {
-            currentpage = activePageIndex;
-          });
-        },
-        waveType: WaveType.liquidReveal,
-        enableSideReveal: true,
-        initialPage: 0,
-        slideIconWidget: Icon(
-          Icons.info,
-          color: currentpage == 0 ? Colors.black : Colors.blue,
-        ),
-        pages: const [LandingPage(), InformationPage()]);
+    return LandingPage(key: landingPageKey);
   }
 }

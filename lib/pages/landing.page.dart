@@ -1,7 +1,11 @@
-import 'package:animated_text_kit/animated_text_kit.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 import 'package:slurp/elements/particles.dart';
+import 'package:slurp/model/SlurpAtom.dart';
+import 'package:slurp/pages/information.page.dart';
+import 'package:slurp/services/database.service.dart';
+import 'package:slurp/widgets/amount-display.widget.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -11,34 +15,38 @@ class LandingPage extends StatefulWidget {
 }
 
 class _LandingPageState extends State<LandingPage> {
-  int _counter = 0;
+  final int rate = 1;
+  Offset currentPos = Offset(0, 0);
 
-  final int aim = 2500;
-  final int rate = 25;
+  late SlurpAtom slurpAtom;
+  final DatabaseService databaseService = DatabaseService.instance;
 
   ParticlesInteractiveExample particles = ParticlesInteractiveExample(
       from: Colors.white, to: Colors.blueAccent, zoom: 5.0);
 
-  void _incrementCounter() {
-    particles.increasePcount(rate: 10);
+  final ValueNotifier<bool> _isSubstracting = ValueNotifier<bool>(false);
 
-    setState(() {
-      _counter += rate;
-    });
-    print(_counter);
+  @override
+  void initState() {
+    super.initState();
   }
 
-  void _decrementCounter() {
-    particles.decreasePcount(rate: 10);
-    if (_counter - rate < 0) {
-      _counter = 0;
-      return;
-    }
-    setState(() {
-      _counter -= rate;
-    });
+  void _incrementCounter(SlurpAtom slurpAtom) {
+    final add = (slurpAtom.aim * rate / 1000).toInt();
+    slurpAtom.setValue(slurpAtom.value + add);
+    particles.increasePcount(relation: slurpAtom.value / slurpAtom.aim);
+    databaseService.update(slurpAtom);
+  }
 
-    print(_counter);
+  void _decrementCounter(SlurpAtom slurpAtom) {
+    final sub = (slurpAtom.aim * rate / 1000).toInt();
+    if (slurpAtom.value - sub < 0) {
+      slurpAtom.setValue(0);
+    } else {
+      slurpAtom.setValue(slurpAtom.value - sub);
+    }
+    particles.decreasePcount(relation: slurpAtom.value / slurpAtom.aim);
+    databaseService.update(slurpAtom);
   }
 
   void _setCounter(int count) {
@@ -47,50 +55,103 @@ class _LandingPageState extends State<LandingPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-        body: Stack(
-          alignment: Alignment.center,
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
-          children: [
-            GameWidget(game: particles),
-            Column(
-              mainAxisSize: MainAxisSize.max,
-              children: <Widget>[
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 60),
-                  child: Text(
-                    "$_counter ml",
-                    style: TextStyle(color: Colors.blue, fontSize: 40),
-                  ),
-                )
-              ],
-            ),
-          ],
-        ),
-        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-        floatingActionButton: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceAround,
-              children: <Widget>[
-                FloatingActionButton(
-                  mini: true,
-                  enableFeedback: true,
-                  onPressed: () {
-                    _decrementCounter();
-                  },
-                  child: const Icon(Icons.remove),
-                ),
-                FloatingActionButton(
-                  mini: true,
-                  enableFeedback: true,
-                  onPressed: () {
-                    _incrementCounter();
-                  },
-                  child: const Icon(Icons.add),
-                )
-              ],
-            )));
+    return FutureBuilder<SlurpAtom?>(
+        future: databaseService.getById(
+            "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}"),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Scaffold(body: CircularProgressIndicator());
+          }
+          if (snapshot.hasData &&
+              snapshot.connectionState == ConnectionState.done) {
+            print("existing data");
+            slurpAtom = snapshot.data!;
+            particles
+                .setPcount((slurpAtom.value / slurpAtom.aim * 1000).floor());
+          } else {
+            print("data null");
+            slurpAtom = SlurpAtom(0, 2500, DateTime.now());
+            databaseService.insert(slurpAtom);
+          }
+          return ChangeNotifierProvider(
+              create: ((context) => slurpAtom),
+              child: Scaffold(
+                  body: ValueListenableBuilder(
+                      valueListenable: _isSubstracting,
+                      builder: (context, value, child) {
+                        return GestureDetector(
+                          onDoubleTap: () {
+                            showModalBottomSheet<void>(
+                                context: context,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(10.0),
+                                ),
+                                clipBehavior: Clip.antiAlias,
+                                builder: (BuildContext context) {
+                                  return InformationPage(
+                                    key: UniqueKey(),
+                                  );
+                                });
+                          },
+                          onVerticalDragUpdate: ((details) {
+                            particles.setGlobalPos(details.globalPosition);
+                            if (value) {
+                              _decrementCounter(slurpAtom);
+                            } else {
+                              _incrementCounter(slurpAtom);
+                            }
+                          }),
+                          onHorizontalDragUpdate: (details) {
+                            particles.setGlobalPos(details.globalPosition);
+                            if (value) {
+                              _decrementCounter(slurpAtom);
+                            } else {
+                              _incrementCounter(slurpAtom);
+                            }
+                          },
+                          child: Stack(
+                            alignment: Alignment.center,
+                            // Center is a layout widget. It takes a single child and positions it
+                            // in the middle of the parent.
+                            children: [
+                              GameWidget(game: particles),
+                              Consumer<SlurpAtom>(
+                                  builder:
+                                      (context, slurpAtomConsumer, child) =>
+                                          AmountDisplay(
+                                              aim: slurpAtom.aim,
+                                              currentValue:
+                                                  slurpAtomConsumer.value))
+                            ],
+                          ),
+                        );
+                      }),
+                  floatingActionButtonLocation:
+                      FloatingActionButtonLocation.centerDocked,
+                  floatingActionButton: Padding(
+                      padding: const EdgeInsets.all(8.0),
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: <Widget>[
+                          ValueListenableBuilder(
+                              valueListenable: _isSubstracting,
+                              builder: (context, value, child) {
+                                return FloatingActionButton(
+                                  mini: true,
+                                  enableFeedback: true,
+                                  onPressed: () {
+                                    _isSubstracting.value = !value;
+                                  },
+                                  child: Icon(
+                                    value
+                                        ? Icons.remove_rounded
+                                        : Icons.add_rounded,
+                                    color: Colors.black,
+                                  ),
+                                );
+                              })
+                        ],
+                      ))));
+        });
   }
 }

@@ -19,9 +19,11 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
   final ColorTween colorTween;
   final double zoom;
   final pCountMax = 1000;
-  final double maxLifeSpan = 20;
+  final double maxLifeSpan = 10;
   final double minLifeSpan = 3;
   var pCount = 1;
+
+  Vector2 globalPos = Vector2(0, 0);
 
   Random rnd = Random();
 
@@ -34,33 +36,43 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
   }) : colorTween = ColorTween(begin: from, end: to);
 
   void setPcount(int count) {
-    pCount = count;
-  }
-
-  void increasePcount({int rate = 1}) {
-    if (pCount + rate > pCountMax) {
+    if (count > pCountMax) {
+      pCount = pCountMax;
       return;
     }
+    pCount = count;
+    print("set pcount");
+    print(pCount);
+  }
+
+  void setGlobalPos(Offset pos) {
+    globalPos = screenToWorld(Vector2(pos.dx, pos.dy));
+  }
+
+  void increasePcount({double relation = 1}) {
+    if (pCountMax * relation <= pCountMax) {
+      pCount = (pCountMax * relation).toInt();
+    }
+    print("pcount new");
     print(pCount);
     add(ParticleSystemComponent(
-        particle: chainingBehaviors(Vector2(size.x - (size.x * 0.2), size.y),
-            screenToWorld(size * camera.zoom / 2))));
-    pCount = pCount + rate;
+        particle: chainingBehaviors(
+            globalPos, screenToWorld(size * camera.zoom / 2))));
   }
 
-  void decreasePcount({int rate = 1}) {
-    if (pCount - rate < 1) {
+  void decreasePcount({double relation = 1}) {
+    final subP = (pCountMax * relation).toInt();
+    if (subP < 1) {
       return;
     }
     add(ParticleSystemComponent(
-        particle: chainingBehaviors(screenToWorld(size * camera.zoom / 2),
-            Vector2(size.x * 0.2, size.y))));
-    pCount = pCount - rate;
+        particle: chainingBehaviors(
+            screenToWorld(size * camera.zoom / 2), globalPos)));
+    pCount = subP;
   }
 
   @override
   void onMount() {
-    // TODO: implement onMount
     dartTimer.Timer.periodic(const Duration(seconds: 1), (_) {
       spawnParticles((2 + rnd.nextInt(2)) / 10, pCount);
     });
