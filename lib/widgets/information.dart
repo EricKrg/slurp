@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:slurp/widgets/bar-chart.widget.dart';
 
-class InformationPage extends StatelessWidget {
-  const InformationPage({super.key});
+class InformationWidget extends StatelessWidget {
+  const InformationWidget({super.key});
 
   @override
   Widget build(BuildContext context) {

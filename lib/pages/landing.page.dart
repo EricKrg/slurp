@@ -1,9 +1,10 @@
+import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:slurp/elements/particles.dart';
 import 'package:slurp/model/SlurpAtom.dart';
-import 'package:slurp/pages/information.page.dart';
+import 'package:slurp/widgets/information.dart';
 import 'package:slurp/services/database.service.dart';
 import 'package:slurp/widgets/amount-display.widget.dart';
 
@@ -64,12 +65,10 @@ class _LandingPageState extends State<LandingPage> {
           }
           if (snapshot.hasData &&
               snapshot.connectionState == ConnectionState.done) {
-            print("existing data");
             slurpAtom = snapshot.data!;
             particles
                 .setPcount((slurpAtom.value / slurpAtom.aim * 1000).floor());
           } else {
-            print("data null");
             slurpAtom = SlurpAtom(0, 2500, DateTime.now());
             databaseService.insert(slurpAtom);
           }
@@ -88,7 +87,7 @@ class _LandingPageState extends State<LandingPage> {
                                 ),
                                 clipBehavior: Clip.antiAlias,
                                 builder: (BuildContext context) {
-                                  return InformationPage(
+                                  return InformationWidget(
                                     key: UniqueKey(),
                                   );
                                 });
@@ -136,19 +135,22 @@ class _LandingPageState extends State<LandingPage> {
                           ValueListenableBuilder(
                               valueListenable: _isSubstracting,
                               builder: (context, value, child) {
-                                return FloatingActionButton(
-                                  mini: true,
-                                  enableFeedback: true,
-                                  onPressed: () {
-                                    _isSubstracting.value = !value;
-                                  },
-                                  child: Icon(
-                                    value
-                                        ? Icons.remove_rounded
-                                        : Icons.add_rounded,
-                                    color: Colors.black,
-                                  ),
-                                );
+                                return AvatarGlow(
+                                    endRadius: 60,
+                                    child: FloatingActionButton(
+                                      mini: true,
+                                      enableFeedback: true,
+                                      backgroundColor: Colors.lightBlue,
+                                      onPressed: () {
+                                        _isSubstracting.value = !value;
+                                      },
+                                      child: Icon(
+                                        value
+                                            ? Icons.remove_rounded
+                                            : Icons.add_rounded,
+                                        color: Colors.black,
+                                      ),
+                                    ));
                               })
                         ],
                       ))));

@@ -6,6 +6,7 @@ class AmountDisplay extends StatelessWidget {
   const AmountDisplay(
       {super.key, required this.aim, required this.currentValue});
 
+  @override
   Widget build(BuildContext context) {
     return Column(
       mainAxisSize: MainAxisSize.max,
