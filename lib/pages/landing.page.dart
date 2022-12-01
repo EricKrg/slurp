@@ -1,3 +1,5 @@
+import 'dart:async' as async;
+
 import 'package:avatar_glow/avatar_glow.dart';
 import 'package:flame/game.dart';
 import 'package:flutter/material.dart';
@@ -27,6 +29,9 @@ class _LandingPageState extends State<LandingPage> {
 
   final ValueNotifier<bool> _isSubstracting = ValueNotifier<bool>(false);
 
+  final ValueNotifier<int> currentInput = ValueNotifier<int>(0);
+  async.Timer inputTimer = async.Timer(const Duration(seconds: 0), () {});
+
   @override
   void initState() {
     super.initState();
@@ -37,6 +42,12 @@ class _LandingPageState extends State<LandingPage> {
     slurpAtom.setValue(slurpAtom.value + add);
     particles.increasePcount(relation: slurpAtom.value / slurpAtom.aim);
     databaseService.update(slurpAtom);
+
+    currentInput.value = currentInput.value + add;
+    inputTimer.cancel();
+    inputTimer = async.Timer(const Duration(seconds: 2), () {
+      currentInput.value = 0;
+    });
   }
 
   void _decrementCounter(SlurpAtom slurpAtom) {
@@ -48,13 +59,18 @@ class _LandingPageState extends State<LandingPage> {
     }
     particles.decreasePcount(relation: slurpAtom.value / slurpAtom.aim);
     databaseService.update(slurpAtom);
+
+    currentInput.value = currentInput.value - sub;
+    inputTimer.cancel();
+    inputTimer = async.Timer(const Duration(seconds: 2), () {
+      currentInput.value = 0;
+    });
   }
 
   void _setCounter(int count) {
     particles.setPcount(count);
   }
 
-  @override
   Widget build(BuildContext context) {
     return FutureBuilder<SlurpAtom?>(
         future: databaseService.getById(
@@ -115,12 +131,17 @@ class _LandingPageState extends State<LandingPage> {
                             children: [
                               GameWidget(game: particles),
                               Consumer<SlurpAtom>(
-                                  builder:
-                                      (context, slurpAtomConsumer, child) =>
-                                          AmountDisplay(
-                                              aim: slurpAtom.aim,
-                                              currentValue:
-                                                  slurpAtomConsumer.value))
+                                  builder: (context, slurpAtomConsumer,
+                                          child) =>
+                                      ValueListenableBuilder(
+                                          valueListenable: currentInput,
+                                          builder: ((context, value, child) =>
+                                              AmountDisplay(
+                                                  aim: slurpAtom.aim,
+                                                  currentInput: value,
+                                                  currentValue:
+                                                      slurpAtomConsumer
+                                                          .value))))
                             ],
                           ),
                         );
@@ -134,18 +155,24 @@ class _LandingPageState extends State<LandingPage> {
                         children: <Widget>[
                           ValueListenableBuilder(
                               valueListenable: _isSubstracting,
-                              builder: (context, value, child) {
+                              builder: (context, isSub, child) {
                                 return AvatarGlow(
                                     endRadius: 60,
+                                    duration: const Duration(seconds: 3),
+                                    curve: Curves.easeInOut,
+                                    showTwoGlows: true,
+                                    glowColor: isSub
+                                        ? Colors.redAccent
+                                        : Colors.blueAccent,
                                     child: FloatingActionButton(
                                       mini: true,
                                       enableFeedback: true,
-                                      backgroundColor: Colors.lightBlue,
+                                      backgroundColor: Colors.white,
                                       onPressed: () {
-                                        _isSubstracting.value = !value;
+                                        _isSubstracting.value = !isSub;
                                       },
                                       child: Icon(
-                                        value
+                                        isSub
                                             ? Icons.remove_rounded
                                             : Icons.add_rounded,
                                         color: Colors.black,

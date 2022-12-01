@@ -3,8 +3,12 @@ import 'package:flutter/material.dart';
 class AmountDisplay extends StatelessWidget {
   final int aim;
   final int currentValue;
+  final int currentInput;
   const AmountDisplay(
-      {super.key, required this.aim, required this.currentValue});
+      {super.key,
+      required this.aim,
+      required this.currentValue,
+      required this.currentInput});
 
   @override
   Widget build(BuildContext context) {
@@ -38,8 +42,8 @@ class AmountDisplay extends StatelessWidget {
         ),
         Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.center,
-          mainAxisSize: MainAxisSize.max,
+          mainAxisAlignment: MainAxisAlignment.end,
+          mainAxisSize: MainAxisSize.min,
           children: [
             AnimatedOpacity(
                 opacity: currentValue >= aim ? 1 : 1,
@@ -60,6 +64,19 @@ class AmountDisplay extends StatelessWidget {
                   size: 20,
                 )),
           ],
+        ),
+        Padding(
+          padding: const EdgeInsets.all(12),
+          child: AnimatedOpacity(
+              opacity: currentInput == 0 ? 0 : 1,
+              duration: const Duration(seconds: 1),
+              child: Text(
+                "$currentInput ml",
+                style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 40,
+                    fontFamily: "OdiBeeSans"),
+              )),
         ),
       ],
     );

@@ -15,7 +15,7 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
       'dragging';
 
   final random = Random();
-  final Tween<double> noise = Tween(begin: -10, end: 10);
+  final Tween<double> noise = Tween(begin: -3, end: 3);
   final ColorTween colorTween;
   final double zoom;
   final pCountMax = 1000;
@@ -35,64 +35,26 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
     required this.zoom,
   }) : colorTween = ColorTween(begin: from, end: to);
 
-  void setPcount(int count) {
-    if (count > pCountMax) {
-      pCount = pCountMax;
-      return;
-    }
-    pCount = count;
-    print("set pcount");
-    print(pCount);
-  }
-
-  void setGlobalPos(Offset pos) {
-    globalPos = screenToWorld(Vector2(pos.dx, pos.dy));
-  }
-
-  void increasePcount({double relation = 1}) {
-    if (pCountMax * relation <= pCountMax) {
-      pCount = (pCountMax * relation).toInt();
-    }
-    print("pcount new");
-    print(pCount);
-    add(ParticleSystemComponent(
-        particle: chainingBehaviors(
-            globalPos, screenToWorld(size * camera.zoom / 2))));
-  }
-
-  void decreasePcount({double relation = 1}) {
-    final subP = (pCountMax * relation).toInt();
-    if (subP < 1) {
-      return;
-    }
-    add(ParticleSystemComponent(
-        particle: chainingBehaviors(
-            screenToWorld(size * camera.zoom / 2), globalPos)));
-    pCount = subP;
-  }
-
   @override
   void onMount() {
     dartTimer.Timer.periodic(const Duration(seconds: 1), (_) {
       spawnParticles((2 + rnd.nextInt(2)) / 10, pCount);
     });
-
-    // dartTimer.Timer.periodic(const Duration(seconds:1), (_) {
-    //   spawnParticles();
-    // });
     super.onMount();
   }
 
   @override
-  Future<void> onLoad() async {
-    // camera.followVector2(Vector2.zero());
-    // camera.zoom = zoom;
-    ;
+  Future<void> onLoad() async {}
+
+  @override
+  void onRemove() {
+    // TODO: implement onRemove
+    super.onRemove();
+    print("on remove");
   }
 
   @override
   void onPanUpdate(DragUpdateInfo info) {
-    print(info.eventPosition.game.xy);
     // pCount = pCount + 1;
     // add(
     //   ParticleSystemComponent(
@@ -119,24 +81,62 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
     // );
   }
 
+  void setPcount(int count) {
+    if (count > pCountMax) {
+      pCount = pCountMax;
+      return;
+    }
+    pCount = count;
+  }
+
+  void setGlobalPos(Offset pos) {
+    globalPos = screenToWorld(Vector2(pos.dx, pos.dy));
+  }
+
+  void increasePcount({double relation = 1}) {
+    if (pCountMax * relation <= pCountMax) {
+      pCount = (pCountMax * relation).toInt();
+    }
+    final addParticle = ParticleSystemComponent(
+        particle: chainingBehaviors(
+            globalPos, screenToWorld(size * camera.zoom / 2)));
+    add(addParticle);
+  }
+
+  void decreasePcount({double relation = 1}) {
+    final subP = (pCountMax * relation).toInt();
+    if (subP < 1) {
+      return;
+    }
+    final subParticle = ParticleSystemComponent(
+        particle: chainingBehaviors(
+            screenToWorld(size * camera.zoom / 2), globalPos));
+    add(subParticle);
+    pCount = subP;
+  }
+
   void spawnParticles(double particelSize, int particelCount) {
-    add(ParticleSystemComponent(
-        anchor: Anchor.center,
-        position: screenToWorld(size * camera.zoom / 2),
-        particle: slurpParticle(particelSize, particelCount)));
+    final particle = slurpParticle(particelSize, particelCount);
+    final particleComp =
+        ParticleSystemComponent(anchor: Anchor.center, particle: particle);
+    add(particleComp);
+    camera.followComponent(particleComp);
   }
 
   Particle slurpParticle(double particelSize, int particelCount) {
     final factor = (particelCount / pCountMax);
-    final lifeSpan = factor * maxLifeSpan;
+    final lifeSpan =
+        factor * maxLifeSpan < minLifeSpan ? minLifeSpan : factor * maxLifeSpan;
     return Particle.generate(
-      lifespan: lifeSpan < minLifeSpan ? minLifeSpan : lifeSpan,
+      lifespan: lifeSpan,
       count: particelCount > pCountMax ? pCountMax : particelCount,
       generator: (i) {
         final color = colorTween.transform(random.nextDouble())!;
         return AcceleratedParticle(
+          lifespan: lifeSpan,
           acceleration: randomVector2(),
           child: ComputedParticle(
+            lifespan: lifeSpan,
             renderer: (canvas, particle) {
               final paint = Paint()..color = color;
               // Override the color to dynamically update opacity
@@ -180,16 +180,19 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
         count: 20,
         lifespan: 2,
         generator: (i) => MovingParticle(
+            lifespan: 2,
             curve: Curves.easeOutQuad,
             from: from,
             to: to,
             child: AcceleratedParticle(
                 acceleration: randomVector2() * 3,
-                //  speed: Vector2(
-                //           noise.transform(random.nextDouble()),
-                //           noise.transform(random.nextDouble()),
-                //         )*-1,
+                lifespan: 2,
+                speed: Vector2(
+                  noise.transform(random.nextDouble()),
+                  noise.transform(random.nextDouble()),
+                ),
                 child: ComputedParticle(
+                  lifespan: 2,
                   renderer: (canvas, particle) {
                     final paint = Paint()..color = Colors.white;
                     // Override the color to dynamically update opacity

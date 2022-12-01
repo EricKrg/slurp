@@ -6,23 +6,14 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:slurp/services/database.service.dart';
 
-class BarChartSample1 extends StatefulWidget {
-  const BarChartSample1({super.key});
-
-  List<Color> get availableColors => const <Color>[
-        Colors.purpleAccent,
-        Colors.yellow,
-        Colors.lightBlue,
-        Colors.orange,
-        Colors.pink,
-        Colors.redAccent,
-      ];
+class PastWeekBarChart extends StatefulWidget {
+  const PastWeekBarChart({super.key});
 
   @override
-  State<StatefulWidget> createState() => BarChartSample1State();
+  State<StatefulWidget> createState() => PastWeekBarChartState();
 }
 
-class BarChartSample1State extends State<BarChartSample1> {
+class PastWeekBarChartState extends State<PastWeekBarChart> {
   final dbService = DatabaseService.instance;
   final Color barBackgroundColor = Colors.black;
   final Duration animDuration = const Duration(milliseconds: 250);

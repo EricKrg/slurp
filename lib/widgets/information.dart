@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:slurp/widgets/GreatDaysCounter.dart';
 import 'package:slurp/widgets/bar-chart.widget.dart';
 
 class InformationWidget extends StatelessWidget {
@@ -8,7 +9,7 @@ class InformationWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     return Container(
       color: Colors.blue,
-      child: Column(children: const [BarChartSample1()]),
+      child: Column(children: const [PastWeekBarChart(), GreatDaysCounter()]),
     );
   }
 }
