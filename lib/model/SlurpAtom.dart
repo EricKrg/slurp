@@ -3,7 +3,7 @@ import 'package:flutter/foundation.dart';
 class SlurpAtom extends ChangeNotifier {
   late String id;
   int value;
-  final int aim;
+  int aim;
   final DateTime dateTime;
 
   SlurpAtom(this.value, this.aim, this.dateTime) {
@@ -13,6 +13,11 @@ class SlurpAtom extends ChangeNotifier {
 
   void setValue(int newValue) {
     value = newValue;
+    notifyListeners();
+  }
+
+  void setAim(int newAim) {
+    aim = newAim;
     notifyListeners();
   }
 

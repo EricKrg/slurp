@@ -19,7 +19,7 @@ class LandingPage extends StatefulWidget {
 
 class _LandingPageState extends State<LandingPage> {
   final int rate = 1;
-  Offset currentPos = Offset(0, 0);
+  Offset currentPos = const Offset(0, 0);
 
   late SlurpAtom slurpAtom;
   final DatabaseService databaseService = DatabaseService.instance;
@@ -71,6 +71,7 @@ class _LandingPageState extends State<LandingPage> {
     particles.setPcount(count);
   }
 
+  @override
   Widget build(BuildContext context) {
     return FutureBuilder<SlurpAtom?>(
         future: databaseService.getById(
@@ -137,11 +138,8 @@ class _LandingPageState extends State<LandingPage> {
                                           valueListenable: currentInput,
                                           builder: ((context, value, child) =>
                                               AmountDisplay(
-                                                  aim: slurpAtom.aim,
-                                                  currentInput: value,
-                                                  currentValue:
-                                                      slurpAtomConsumer
-                                                          .value))))
+                                                  slurpAtom: slurpAtomConsumer,
+                                                  currentInput: value))))
                             ],
                           ),
                         );

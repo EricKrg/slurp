@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:slurp/model/SlurpAtom.dart';
+import 'package:slurp/widgets/alter-aim.dart';
 
 class AmountDisplay extends StatelessWidget {
-  final int aim;
-  final int currentValue;
+  final SlurpAtom slurpAtom;
   final int currentInput;
   const AmountDisplay(
-      {super.key,
-      required this.aim,
-      required this.currentValue,
-      required this.currentInput});
+      {super.key, required this.slurpAtom, required this.currentInput});
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +23,7 @@ class AmountDisplay extends StatelessWidget {
               SizedBox(
                 width: 80,
                 child: Text(
-                  "$currentValue",
+                  "${slurpAtom.value}",
                   style: const TextStyle(
                       color: Colors.lightBlue,
                       fontSize: 40,
@@ -40,30 +38,41 @@ class AmountDisplay extends StatelessWidget {
             ],
           ),
         ),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.center,
-          mainAxisAlignment: MainAxisAlignment.end,
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AnimatedOpacity(
-                opacity: currentValue >= aim ? 1 : 1,
-                duration: const Duration(seconds: 1),
-                child: Text(
-                  "$aim ml",
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 20,
-                      fontFamily: "OdiBeeSans"),
-                )),
-            AnimatedOpacity(
-                opacity: currentValue >= aim ? 1 : 0,
-                duration: const Duration(seconds: 1),
-                child: const Icon(
-                  Icons.check_circle,
-                  color: Colors.white,
-                  size: 20,
-                )),
-          ],
+        GestureDetector(
+          onTap: (() async {
+            final newAim = await showDialog<int>(
+                context: context,
+                builder: ((context) {
+                  return AimAlert(currentAim: slurpAtom.aim);
+                }));
+            print(newAim);
+            slurpAtom.setAim(newAim!);
+          }),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            mainAxisAlignment: MainAxisAlignment.end,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AnimatedOpacity(
+                  opacity: slurpAtom.value >= slurpAtom.aim ? 1 : 1,
+                  duration: const Duration(seconds: 1),
+                  child: Text(
+                    "${slurpAtom.aim} ml",
+                    style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 20,
+                        fontFamily: "OdiBeeSans"),
+                  )),
+              AnimatedOpacity(
+                  opacity: slurpAtom.value >= slurpAtom.aim ? 1 : 0,
+                  duration: const Duration(seconds: 1),
+                  child: const Icon(
+                    Icons.check_circle,
+                    color: Colors.white,
+                    size: 20,
+                  )),
+            ],
+          ),
         ),
         Padding(
           padding: const EdgeInsets.all(12),

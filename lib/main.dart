@@ -20,9 +20,12 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Slurp',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
-        brightness: Brightness.dark,
-      ),
+          primarySwatch: Colors.blue,
+          brightness: Brightness.dark,
+          textTheme: const TextTheme(
+            bodyText1: TextStyle(
+                color: Colors.white, fontSize: 20, fontFamily: "OdiBeeSans"),
+          )),
       home: LandingPage(key: UniqueKey()),
     );
   }
