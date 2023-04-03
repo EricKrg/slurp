@@ -56,12 +56,17 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
       // App is resumed from the background
       print('App resumed from background');
       // refresh notification plan if needed
-      LocalNoticeService().scheduleNotificationsFromDBPlan(
-          "Slurp reminder!", "Your hourly reminder to stay hydrated!");
+      if (slurpAtom.value <= slurpAtom.aim) {
+        // only shedule if aim is not reached
+        LocalNoticeService().scheduleNotificationsFromDBPlan(
+            "Slurp reminder!", "Your hourly reminder to stay hydrated!");
+      } else {
+        // needs to be tested before
+        // LocalNoticeService().cancelAllNotification();
+      }
 
       if (!isToday(slurpAtom.dateTime, DateTime.now())) {
         // create a new slurp entry if the date changes between pick ups
-        print("create new entry!");
         controller.createNewSlurp();
         setState(() {});
       }
@@ -109,6 +114,11 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
                           },
                           onVerticalDragUpdate: ((details) {
                             particles.setGlobalPos(details.globalPosition);
+                            if (!isToday(slurpAtom.dateTime, DateTime.now())) {
+                              // create a new slurp entry if the date changes between pick ups
+                              controller.createNewSlurp();
+                              setState(() {});
+                            }
                             if (value) {
                               controller.decrementCounter(
                                   slurpAtom, particles, rate);
@@ -118,6 +128,11 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
                             }
                           }),
                           onHorizontalDragUpdate: (details) {
+                            if (!isToday(slurpAtom.dateTime, DateTime.now())) {
+                              // create a new slurp entry if the date changes between pick ups
+                              controller.createNewSlurp();
+                              setState(() {});
+                            }
                             particles.setGlobalPos(details.globalPosition);
                             if (value) {
                               controller.decrementCounter(

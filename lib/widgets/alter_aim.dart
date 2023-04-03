@@ -6,7 +6,6 @@ import 'package:flutter/src/widgets/framework.dart';
 import 'package:slurp/model/NotificationPlan.dart';
 import 'package:slurp/services/database.service.dart';
 import 'package:slurp/services/notifications.service.dart';
-import 'package:sqflite/sqflite.dart';
 
 class AimAlert extends StatefulWidget {
   final int currentAim;
@@ -21,6 +20,7 @@ class _AimAlertState extends State<AimAlert> {
   final int minAim = 1500; // cant go lower
   final int maxAim = 5000; // cant go higher
 
+  final ValueNotifier<bool> _isKg = ValueNotifier<bool>(false);
   final noticeService = LocalNoticeService();
 
   final border = const OutlineInputBorder(
@@ -38,81 +38,115 @@ class _AimAlertState extends State<AimAlert> {
         children: [
           Text('${widget.currentAim} ml',
               style: Theme.of(context).textTheme.displayMedium),
-          Form(
-            key: _formKey,
-            child: TextFormField(
-              keyboardType: TextInputType.number,
-              inputFormatters: <TextInputFormatter>[
-                FilteringTextInputFormatter.digitsOnly
-              ],
-              onFieldSubmitted: ((value) {
-                if (_formKey.currentState!.validate()) {
-                  newAim = int.parse(value);
-                  Navigator.of(context).pop(newAim);
-                }
-              }),
-              onChanged: ((value) {
-                try {
-                  newAim = int.parse(value);
-                } catch (e) {
-                  newAim = 2500;
-                }
-              }),
-              validator: (value) {
-                if (value == null) {
-                  return "Please enter your new aim.";
-                }
-                if (value.isEmpty) {
-                  return "Please enter your new aim.";
-                }
-                try {
-                  final val = int.parse(value);
-                  if (val < minAim) {
-                    return "Your aim should not be lower then $minAim ml";
-                  }
+          ValueListenableBuilder(
+              valueListenable: _isKg,
+              builder: (context, isKg, child) {
+                return Form(
+                  key: _formKey,
+                  child: TextFormField(
+                    keyboardType: TextInputType.number,
+                    inputFormatters: <TextInputFormatter>[
+                      FilteringTextInputFormatter.digitsOnly
+                    ],
+                    onFieldSubmitted: ((value) {
+                      if (_formKey.currentState!.validate()) {
+                        newAim = int.parse(value);
+                        if (isKg) {
+                          newAim = 35 * newAim;
+                        }
+                        Navigator.of(context).pop(newAim);
+                      }
+                    }),
+                    onChanged: ((value) {
+                      try {
+                        newAim = int.parse(value);
+                        if (isKg) {
+                          newAim = 35 * newAim;
+                        }
+                      } catch (e) {
+                        newAim = 2500;
+                      }
+                    }),
+                    validator: (value) {
+                      if (value == null) {
+                        return "Please enter your new aim.";
+                      }
+                      if (value.isEmpty) {
+                        return "Please enter your new aim.";
+                      }
+                      if (isKg && int.parse(value) > 45) {
+                        return null;
+                      }
+                      try {
+                        final val = int.parse(value);
+                        if (val < minAim) {
+                          return "Your aim should not be lower then $minAim ml";
+                        }
 
-                  if (val > maxAim) {
-                    return "Your aim should not be higher then $maxAim ml";
-                  }
-                } catch (e) {
-                  return "Please enter a valid number";
-                }
-                return null;
-              },
-              autofocus: true,
-              cursorColor: Colors.black,
-              style: Theme.of(context).textTheme.bodyMedium,
-              decoration: InputDecoration(
-                  fillColor: Colors.white,
-                  focusedBorder: border,
-                  border: border,
-                  errorBorder: border,
-                  suffix:
-                      Text("ml", style: Theme.of(context).textTheme.bodyMedium),
-                  labelStyle: Theme.of(context).textTheme.bodyMedium,
-                  hintStyle: TextStyle(
-                      color: Colors.black.withAlpha(100),
-                      fontSize: 18,
-                      fontFamily: "OdiBeeSans"),
-                  errorStyle: Theme.of(context).textTheme.titleMedium,
-                  errorMaxLines: 2,
-                  labelText: 'New Slurp Aim',
-                  hintText: "Enter your new Slurp aim here"),
-            ),
+                        if (val > maxAim) {
+                          return "Your aim should not be higher then $maxAim ml";
+                        }
+                      } catch (e) {
+                        return "Please enter a valid number";
+                      }
+                      return null;
+                    },
+                    autofocus: true,
+                    cursorColor: Colors.black,
+                    style: Theme.of(context).textTheme.bodyMedium,
+                    decoration: InputDecoration(
+                        fillColor: Colors.white,
+                        focusedBorder: border,
+                        border: border,
+                        errorBorder: border,
+                        suffix: GestureDetector(
+                            onTap: () => _isKg.value = !_isKg.value,
+                            child: isKg
+                                ? Text("kg",
+                                    style:
+                                        Theme.of(context).textTheme.bodyMedium)
+                                : Text("ml",
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodyMedium)),
+                        labelStyle: Theme.of(context).textTheme.bodyMedium,
+                        hintStyle: TextStyle(
+                            color: Colors.black.withAlpha(100),
+                            fontSize: 18,
+                            fontFamily: "OdiBeeSans"),
+                        errorStyle: Theme.of(context).textTheme.titleMedium,
+                        errorMaxLines: 2,
+                        labelText: 'New Slurp Aim',
+                        hintText: "Enter your new Slurp aim here"),
+                  ),
+                );
+              }),
+          Padding(
+            padding: const EdgeInsets.only(top: 6.0),
+            child: Text(
+                'You can calculate your Hydration need roughly by multiplying 35ml per Kg of your Bodyweight. You can change the unit by taping on it in the field above.',
+                style: Theme.of(context).textTheme.bodySmall),
           ),
         ],
       ),
       actionsPadding: const EdgeInsets.all(2),
       actionsAlignment: MainAxisAlignment.center,
       actions: <Widget>[
-        IconButton(
-            onPressed: (() {
-              if (_formKey.currentState!.validate()) {
-                Navigator.of(context).pop(newAim);
-              }
+        ValueListenableBuilder(
+            valueListenable: _isKg,
+            builder: (context, isKg, child) {
+              return IconButton(
+                  onPressed: (() {
+                    if (_formKey.currentState!.validate()) {
+                      if (isKg) {
+                        newAim = 35 * newAim;
+                      }
+                      Navigator.of(context).pop(newAim);
+                    }
+                  }),
+                  icon: const Icon(Icons.check_circle_outline_rounded,
+                      color: Colors.white));
             }),
-            icon: const Icon(Icons.check_circle_outline_rounded,
-                color: Colors.white)),
         Row(mainAxisSize: MainAxisSize.min, children: [
           Text(
             "Remind me",

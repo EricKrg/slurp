@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:slurp/model/DatabaseObject.dart';
+import 'package:slurp/model/NotificationPlan.dart';
+import 'package:slurp/model/SlurpAim.dart';
+import 'package:slurp/model/SlurpAtom.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -21,16 +24,19 @@ class DatabaseService {
       // Set the path to the database. Note: Using the `join` function from the
       // `path` package is best practice to ensure the path is correctly
       // constructed for each platform.
-      join(await getDatabasesPath(), 'slurp2.db'),
+      join(await getDatabasesPath(), 'slurp3.db'),
 
       onCreate: (db, version) async {
         // Run the CREATE TABLE statement on the database.
 
         await db.execute(
-          'CREATE TABLE notificationplan(id STRING PRIMARY KEY, open TEXT, closed TEXT, tmpClosed TEXT, shouldRemind BOOLEAN, planFrom INTEGER)',
+          'CREATE TABLE $notifiactionTable(id STRING PRIMARY KEY, open TEXT, closed TEXT, tmpClosed TEXT, shouldRemind BOOLEAN, planFrom INTEGER)',
         );
         await db.execute(
-          'CREATE TABLE slurp(id INTEGER PRIMARY KEY, value INTEGER, aim INTEGER, dateTime INTEGER, dayMap TEXT)',
+          'CREATE TABLE $slurpTable(id INTEGER PRIMARY KEY, value INTEGER, aim INTEGER, dateTime INTEGER, dayMap TEXT)',
+        );
+        await db.execute(
+          'CREATE TABLE $slurpAimTable(id STRING PRIMARY KEY, aim INTEGER)',
         );
         return;
       },

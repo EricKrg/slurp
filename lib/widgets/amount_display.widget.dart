@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:slurp/model/SlurpAim.dart';
 import 'package:slurp/model/SlurpAtom.dart';
 import 'package:slurp/services/database.service.dart';
 import 'package:slurp/widgets/alter_aim.dart';
@@ -49,6 +50,7 @@ class AmountDisplay extends StatelessWidget {
                 }));
             if (newAim != null) {
               slurpAtom.setAim(newAim);
+              databaseService.insert(SlurpAim(aim: newAim), slurpAimTable);
               databaseService.update<SlurpAtom>(
                   obj: slurpAtom, table: slurpTable);
             }

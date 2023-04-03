@@ -33,6 +33,11 @@ class MyApp extends StatelessWidget {
                 fontFamily: "OdiBeeSans"),
             displayMedium: TextStyle(
                 color: Colors.white, fontSize: 30, fontFamily: "OdiBeeSans"),
+            bodySmall: TextStyle(
+                color: Colors.white,
+                fontSize: 16,
+                letterSpacing: 0.6,
+                fontFamily: "OdiBeeSans"),
             bodyLarge: TextStyle(
                 color: Colors.white, fontSize: 20, fontFamily: "OdiBeeSans"),
             bodyMedium: TextStyle(

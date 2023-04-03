@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:slurp/elements/particles.dart';
+import 'package:slurp/model/SlurpAim.dart';
 import 'package:slurp/model/SlurpAtom.dart';
 import 'package:slurp/services/database.service.dart';
 import 'dart:async' as async;
@@ -45,7 +46,16 @@ class LandingPageController {
   }
 
   Future<void> createNewSlurp() async {
-    final slurpAtom = SlurpAtom(0, 2500, DateTime.now(), {});
+    int currentAim;
+    try {
+      currentAim = (await databaseService.getById<SlurpAim>(
+              id: "current", table: slurpAimTable))!
+          .aim;
+    } catch (e) {
+      currentAim = 2500;
+    }
+
+    final slurpAtom = SlurpAtom(0, currentAim, DateTime.now(), {});
     await databaseService.insert<SlurpAtom>(slurpAtom, slurpTable);
   }
 }

@@ -75,11 +75,10 @@ class LocalNoticeService {
       String title, String body) async {
     var notificationPlan = await DatabaseService.instance
         .getById<NotificationPlan>(id: "current", table: notifiactionTable);
-    print("update notification schedule");
+
     if (notificationPlan == null ||
         !isToday(notificationPlan.planFrom, DateTime.now())) {
       // init notifiaction plan
-      print("NO CURRENT PLAN FOR TODAY, INIT PLAN");
       notificationPlan = NotificationPlan(
           planFrom: DateTime.now(),
           tmpClosed: [],
