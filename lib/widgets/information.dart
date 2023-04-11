@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
-import 'package:slurp/widgets/GreatDaysCounter.dart';
-import 'package:slurp/widgets/bar-chart.widget.dart';
+import 'package:slurp/widgets/great_days_counter.dart';
+import 'package:slurp/widgets/bar_chart.widget.dart';
 
 class InformationWidget extends StatelessWidget {
   const InformationWidget({super.key});
