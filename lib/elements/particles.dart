@@ -8,7 +8,7 @@ import 'package:flame_forge2d/flame_forge2d.dart' as forge2d;
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' hide Image;
 
-class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
+class ParticlesInteractive extends forge2d.Forge2DGame with PanDetector {
   static const description = 'An example which shows how '
       'ParticleSystemComponent can be added in runtime '
       'following an event, in this example, the mouse '
@@ -29,7 +29,7 @@ class ParticlesInteractiveExample extends forge2d.Forge2DGame with PanDetector {
 
   Vector2 randomVector2() => (Vector2.random(rnd) - Vector2.random(rnd)) * 0.8;
 
-  ParticlesInteractiveExample({
+  ParticlesInteractive({
     required Color from,
     required Color to,
     required this.zoom,
