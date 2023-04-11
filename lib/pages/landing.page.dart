@@ -6,9 +6,13 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:slurp/elements/particles.dart';
 import 'package:slurp/model/SlurpAtom.dart';
+import 'package:slurp/model/DatabaseObject.dart';
+import 'package:slurp/services/notifications.service.dart';
+import 'package:slurp/widgets/day_map.dart';
 import 'package:slurp/widgets/information.dart';
 import 'package:slurp/services/database.service.dart';
-import 'package:slurp/widgets/amount-display.widget.dart';
+import 'package:slurp/widgets/amount_display.widget.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -17,14 +21,14 @@ class LandingPage extends StatefulWidget {
   State<StatefulWidget> createState() => _LandingPageState();
 }
 
-class _LandingPageState extends State<LandingPage> {
+class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
   final int rate = 1;
   Offset currentPos = const Offset(0, 0);
 
   late SlurpAtom slurpAtom;
   final DatabaseService databaseService = DatabaseService.instance;
 
-  ParticlesInteractiveExample particles = ParticlesInteractiveExample(
+  ParticlesInteractive particles = ParticlesInteractive(
       from: Colors.white, to: Colors.blueAccent, zoom: 5.0);
 
   final ValueNotifier<bool> _isSubstracting = ValueNotifier<bool>(false);
@@ -35,13 +39,31 @@ class _LandingPageState extends State<LandingPage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      // App is resumed from the background
+      print('App resumed from background');
+      // refresh notification plan if needed
+      LocalNoticeService().scheduleNotificationsFromDBPlan(
+          "Slurp reminder!", "Your hourly reminder to stay hydrated!");
+    }
   }
 
   void _incrementCounter(SlurpAtom slurpAtom) {
     final add = (slurpAtom.aim * rate / 1000).toInt();
     slurpAtom.setValue(slurpAtom.value + add);
     particles.increasePcount(relation: slurpAtom.value / slurpAtom.aim);
-    databaseService.update(slurpAtom);
+    databaseService.update<SlurpAtom>(obj: slurpAtom, table: slurpTable);
 
     currentInput.value = currentInput.value + add;
     inputTimer.cancel();
@@ -58,7 +80,7 @@ class _LandingPageState extends State<LandingPage> {
       slurpAtom.setValue(slurpAtom.value - sub);
     }
     particles.decreasePcount(relation: slurpAtom.value / slurpAtom.aim);
-    databaseService.update(slurpAtom);
+    databaseService.update<SlurpAtom>(obj: slurpAtom, table: slurpTable);
 
     currentInput.value = currentInput.value - sub;
     inputTimer.cancel();
@@ -67,15 +89,12 @@ class _LandingPageState extends State<LandingPage> {
     });
   }
 
-  void _setCounter(int count) {
-    particles.setPcount(count);
-  }
-
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<SlurpAtom?>(
         future: databaseService.getById(
-            "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}"),
+            id: "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}",
+            table: slurpTable),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
             return const Scaffold(body: CircularProgressIndicator());
@@ -86,8 +105,8 @@ class _LandingPageState extends State<LandingPage> {
             particles
                 .setPcount((slurpAtom.value / slurpAtom.aim * 1000).floor());
           } else {
-            slurpAtom = SlurpAtom(0, 2500, DateTime.now());
-            databaseService.insert(slurpAtom);
+            slurpAtom = SlurpAtom(0, 2500, DateTime.now(), {});
+            databaseService.insert<SlurpAtom>(slurpAtom, slurpTable);
           }
           return ChangeNotifierProvider(
               create: ((context) => slurpAtom),
@@ -126,20 +145,33 @@ class _LandingPageState extends State<LandingPage> {
                             }
                           },
                           child: Stack(
-                            alignment: Alignment.center,
-                            // Center is a layout widget. It takes a single child and positions it
-                            // in the middle of the parent.
+                            alignment: Alignment.centerLeft,
                             children: [
-                              GameWidget(game: particles),
+                              Stack(
+                                alignment: Alignment.center,
+                                // Center is a layout widget. It takes a single child and positions it
+                                // in the middle of the parent.
+                                children: [
+                                  GameWidget(game: particles),
+                                  Consumer<SlurpAtom>(
+                                      builder: (context, slurpAtomConsumer,
+                                              child) =>
+                                          ValueListenableBuilder(
+                                              valueListenable: currentInput,
+                                              builder: ((context, value,
+                                                      child) =>
+                                                  AmountDisplay(
+                                                      slurpAtom:
+                                                          slurpAtomConsumer,
+                                                      currentInput: value)))),
+                                ],
+                              ),
                               Consumer<SlurpAtom>(
-                                  builder: (context, slurpAtomConsumer,
-                                          child) =>
-                                      ValueListenableBuilder(
-                                          valueListenable: currentInput,
-                                          builder: ((context, value, child) =>
-                                              AmountDisplay(
-                                                  slurpAtom: slurpAtomConsumer,
-                                                  currentInput: value))))
+                                  builder:
+                                      (context, slurpAtomConsumer, child) =>
+                                          DayMap(
+                                            slurpAtom: slurpAtomConsumer,
+                                          ))
                             ],
                           ),
                         );
