@@ -1,3 +1,7 @@
+import 'dart:convert';
+
+import 'package:flutter/foundation.dart';
+import 'package:slurp/model/DatabaseObject.dart';
 import 'package:slurp/model/SlurpAtom.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -18,13 +22,18 @@ class DatabaseService {
       // Set the path to the database. Note: Using the `join` function from the
       // `path` package is best practice to ensure the path is correctly
       // constructed for each platform.
-      join(await getDatabasesPath(), 'slurp_database.db'),
+      join(await getDatabasesPath(), 'slurp2.db'),
 
-      onCreate: (db, version) {
+      onCreate: (db, version) async {
         // Run the CREATE TABLE statement on the database.
-        return db.execute(
-          'CREATE TABLE slurp(id INTEGER PRIMARY KEY, value INTEGER, aim INTEGER, dateTime INTEGER)',
+
+        await db.execute(
+          'CREATE TABLE notificationplan(id STRING PRIMARY KEY, open TEXT, closed TEXT, tmpClosed TEXT, shouldRemind BOOLEAN, planFrom INTEGER)',
         );
+        await db.execute(
+          'CREATE TABLE slurp(id INTEGER PRIMARY KEY, value INTEGER, aim INTEGER, dateTime INTEGER, dayMap TEXT)',
+        );
+        return;
       },
       // Set the version. This executes the onCreate function and provides a
       // path to perform database upgrades and downgrades.
@@ -34,44 +43,39 @@ class DatabaseService {
 
   DatabaseService();
 
-  Future<void> insert(SlurpAtom slurpAtom) async {
-    // Insert the Dog into the correct table. You might also specify the
-    // `conflictAlgorithm` to use in case the same dog is inserted twice.
-    //
-    // In this case, replace any previous data.
-    await database.insert(
-      'slurp',
-      slurpAtom.toMap(),
-      conflictAlgorithm: ConflictAlgorithm.replace,
-    );
+  Future<void> insert<T extends DatabaseObject>(T obj, String table) async {
+    try {
+      final map = obj.toMap();
+      await database.insert(
+        table,
+        obj.toMap(),
+        conflictAlgorithm: ConflictAlgorithm.replace,
+      );
+    } catch (e) {
+      print("Error inserting Database Object ${e.toString()}");
+    }
   }
 
-  Future<SlurpAtom?> getById(String id) async {
+  Future<T?> getById<T>({required String id, required String table}) async {
     final List<Map<String, dynamic>> res = await database.query(
-      'slurp',
+      table,
       where: 'id = ?',
       whereArgs: [id],
     );
-    print("getting slurp");
-    print(id);
-    print(res);
     if (res.isEmpty) {
-      print("is empty");
       return null;
     }
-    print("return value");
-    return SlurpAtom(res.first['value'], res.first['aim'],
-        DateTime.fromMillisecondsSinceEpoch(res.first['dateTime']));
+    final t = make<T>(res.first);
+    return t;
   }
 
-  Future<void> update(SlurpAtom slurpAtom) async {
+  Future<void> update<T extends DatabaseObject>(
+      {required T obj, required String table}) async {
     await database.update(
-      'slurp',
-      slurpAtom.toMap(),
-      // Ensure that the Dog has a matching id.
+      table,
+      obj.toMap(),
       where: 'id = ?',
-      // Pass the Dog's id as a whereArg to prevent SQL injection.
-      whereArgs: [slurpAtom.id],
+      whereArgs: [obj.id],
     );
   }
 }
