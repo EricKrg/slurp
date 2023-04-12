@@ -2,7 +2,6 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:slurp/model/DatabaseObject.dart';
-import 'package:slurp/model/SlurpAtom.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -45,7 +44,6 @@ class DatabaseService {
 
   Future<void> insert<T extends DatabaseObject>(T obj, String table) async {
     try {
-      final map = obj.toMap();
       await database.insert(
         table,
         obj.toMap(),

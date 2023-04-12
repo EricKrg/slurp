@@ -54,32 +54,7 @@ class ParticlesInteractive extends forge2d.Forge2DGame with PanDetector {
   }
 
   @override
-  void onPanUpdate(DragUpdateInfo info) {
-    // pCount = pCount + 1;
-    // add(
-    //   ParticleSystemComponent(
-    //     position: info.eventPosition.game,
-    //     particle: Particle.generate(
-    //       count: 4,
-    //       generator: (i) {
-    //         return AcceleratedParticle(
-    //           //lifespan: 2,
-    //           lifespan: 4,
-    //           speed: Vector2(
-    //                 noise.transform(random.nextDouble()),
-    //                 noise.transform(random.nextDouble()),
-    //               ) *
-    //               i.toDouble(),
-    //           child: CircleParticle(
-    //               radius: 0.2,
-    //               paint: Paint()
-    //                 ..color = colorTween.transform(random.nextDouble())!),
-    //         );
-    //       },
-    //     ),
-    //   ),
-    // );
-  }
+  void onPanUpdate(DragUpdateInfo info) {}
 
   void setPcount(int count) {
     if (count > pCountMax) {

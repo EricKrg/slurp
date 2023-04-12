@@ -6,13 +6,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:slurp/elements/particles.dart';
 import 'package:slurp/model/SlurpAtom.dart';
-import 'package:slurp/model/DatabaseObject.dart';
+import 'package:slurp/pages/landing.page.controller.dart';
 import 'package:slurp/services/notifications.service.dart';
 import 'package:slurp/widgets/day_map.dart';
 import 'package:slurp/widgets/information.dart';
 import 'package:slurp/services/database.service.dart';
 import 'package:slurp/widgets/amount_display.widget.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class LandingPage extends StatefulWidget {
   const LandingPage({super.key});
@@ -27,19 +26,22 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
 
   late SlurpAtom slurpAtom;
   final DatabaseService databaseService = DatabaseService.instance;
+  final LandingPageController controller = LandingPageController();
 
   ParticlesInteractive particles = ParticlesInteractive(
       from: Colors.white, to: Colors.blueAccent, zoom: 5.0);
 
   final ValueNotifier<bool> _isSubstracting = ValueNotifier<bool>(false);
 
-  final ValueNotifier<int> currentInput = ValueNotifier<int>(0);
-  async.Timer inputTimer = async.Timer(const Duration(seconds: 0), () {});
+  late final ValueNotifier<int> currentInput;
+  late final async.Timer inputTimer;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
+    currentInput = controller.currentInput;
+    inputTimer = controller.inputTimer;
   }
 
   @override
@@ -56,37 +58,14 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
       // refresh notification plan if needed
       LocalNoticeService().scheduleNotificationsFromDBPlan(
           "Slurp reminder!", "Your hourly reminder to stay hydrated!");
+
+      if (!isToday(slurpAtom.dateTime, DateTime.now())) {
+        // create a new slurp entry if the date changes between pick ups
+        print("create new entry!");
+        controller.createNewSlurp();
+        setState(() {});
+      }
     }
-  }
-
-  void _incrementCounter(SlurpAtom slurpAtom) {
-    final add = (slurpAtom.aim * rate / 1000).toInt();
-    slurpAtom.setValue(slurpAtom.value + add);
-    particles.increasePcount(relation: slurpAtom.value / slurpAtom.aim);
-    databaseService.update<SlurpAtom>(obj: slurpAtom, table: slurpTable);
-
-    currentInput.value = currentInput.value + add;
-    inputTimer.cancel();
-    inputTimer = async.Timer(const Duration(seconds: 2), () {
-      currentInput.value = 0;
-    });
-  }
-
-  void _decrementCounter(SlurpAtom slurpAtom) {
-    final sub = (slurpAtom.aim * rate / 1000).toInt();
-    if (slurpAtom.value - sub < 0) {
-      slurpAtom.setValue(0);
-    } else {
-      slurpAtom.setValue(slurpAtom.value - sub);
-    }
-    particles.decreasePcount(relation: slurpAtom.value / slurpAtom.aim);
-    databaseService.update<SlurpAtom>(obj: slurpAtom, table: slurpTable);
-
-    currentInput.value = currentInput.value - sub;
-    inputTimer.cancel();
-    inputTimer = async.Timer(const Duration(seconds: 2), () {
-      currentInput.value = 0;
-    });
   }
 
   @override
@@ -131,17 +110,21 @@ class _LandingPageState extends State<LandingPage> with WidgetsBindingObserver {
                           onVerticalDragUpdate: ((details) {
                             particles.setGlobalPos(details.globalPosition);
                             if (value) {
-                              _decrementCounter(slurpAtom);
+                              controller.decrementCounter(
+                                  slurpAtom, particles, rate);
                             } else {
-                              _incrementCounter(slurpAtom);
+                              controller.incrementCounter(
+                                  slurpAtom, particles, rate);
                             }
                           }),
                           onHorizontalDragUpdate: (details) {
                             particles.setGlobalPos(details.globalPosition);
                             if (value) {
-                              _decrementCounter(slurpAtom);
+                              controller.decrementCounter(
+                                  slurpAtom, particles, rate);
                             } else {
-                              _incrementCounter(slurpAtom);
+                              controller.incrementCounter(
+                                  slurpAtom, particles, rate);
                             }
                           },
                           child: Stack(

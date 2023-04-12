@@ -40,27 +40,6 @@ class ScheduledNotificationConfig {
       this.hours, this.titel, this.body, this.shouldTrigger);
 }
 
-final defaultTrigger = (() async {
-  final currentHour = DateTime.now().hour;
-  // todo: make night time configurable
-  if (currentHour > 22 || currentHour < 5) {
-    // dont remind after 10 or before 6
-    return false;
-  }
-  // was there hydration in the last hour, if not send reminder
-  final currentSlurp = await DatabaseService.instance.getById<SlurpAtom>(
-      id: "${DateTime.now().year}${DateTime.now().month}${DateTime.now().day}",
-      table: slurpTable);
-  if (currentSlurp == null) {
-    return true;
-  }
-
-  final slurpedLastHour = currentSlurp.dayMap[currentHour.toString()]! > 100;
-  print(
-      "should trigger ${!slurpedLastHour} ${currentSlurp.aim} ${currentSlurp.value}");
-  return !slurpedLastHour && currentSlurp.value < currentSlurp.aim;
-});
-
 class LocalNoticeService {
   // Singleton of the LocalNoticeService
   static final LocalNoticeService _notificationService =
@@ -96,7 +75,7 @@ class LocalNoticeService {
       String title, String body) async {
     var notificationPlan = await DatabaseService.instance
         .getById<NotificationPlan>(id: "current", table: notifiactionTable);
-
+    print("update notification schedule");
     if (notificationPlan == null ||
         !isToday(notificationPlan.planFrom, DateTime.now())) {
       // init notifiaction plan
@@ -123,7 +102,7 @@ class LocalNoticeService {
       if (entry.value) {
         final scheduleTime =
             DateTime(now.year, now.month, now.day, entry.key, 30);
-        print("sheduled for ${scheduleTime.toIso8601String()}");
+        // print("sheduled for ${scheduleTime.toIso8601String()}");
         addNotification(
             title, body, scheduleTime.millisecondsSinceEpoch + 1000, entry.key,
             dateTimeComponents: DateTimeComponents.time);
@@ -137,7 +116,7 @@ class LocalNoticeService {
       DateTimeComponents? dateTimeComponents}) async {
     final scheduleTime =
         tz.TZDateTime.fromMillisecondsSinceEpoch(tz.local, endTime);
-    print("add ${scheduleTime.toIso8601String()}");
+    // print("add ${scheduleTime.toIso8601String()}");
     const DarwinNotificationDetails iosNotificationDetails =
         DarwinNotificationDetails(
       categoryIdentifier: "",
